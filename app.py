@@ -31,11 +31,11 @@ def generate_questions(content):
         "inputs": prompt,
         "parameters": {"max_new_tokens": 512, "temperature": 0.7}
     }
+    HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.2"
     api_url = f"https://api-inference.huggingface.co/models/{HF_MODEL}"
     response = requests.post(api_url, json=payload)
     if response.status_code == 200:
         result = response.json()
-        # Model output can vary format; handle both list and dict
         if isinstance(result, list):
             return result[0].get("generated_text", "").replace(prompt, "").strip()
         elif isinstance(result, dict):
