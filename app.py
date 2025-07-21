@@ -31,7 +31,7 @@ def generate_questions(content):
         "inputs": prompt,
         "parameters": {"max_new_tokens": 512, "temperature": 0.7}
     }
-   HF_MODEL = "tiiuae/falcon-7b-instruct"
+   HF_MODEL ="tiiuae/falcon-7b-instruct"
     api_url = f"https://api-inference.huggingface.co/models/{HF_MODEL}"
     response = requests.post(api_url, json=payload)
     if response.status_code == 200:
