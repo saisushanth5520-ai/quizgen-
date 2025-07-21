@@ -1,10 +1,9 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 import PyPDF2
 from docx import Document
 
-# Store your API key securely (on Streamlit, use st.secrets)
-openai.api_key = st.secrets["api_key"]
+client = OpenAI(api_key=st.secrets["api_key"])
 
 def extract_text(file):
     text = ""
@@ -22,26 +21,22 @@ def extract_text(file):
 
 def generate_questions(content):
     prompt = f'''
-    Generate 5 quiz questions (mixed: MCQs, True/False, Short Answer) from this content:
+    Generate 5 quiz questions (mixed types: MCQ, True/False, Short Answer) from this content:
     \"\"\"{content}\"\"\"
-    Format:
-    - Type: ...
-    - Question: ...
-    - Options (for MCQ only): ...
-    - Answer: ...
+    Return only questions and answers in a neat format.
     '''
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages = [{"role": "user", "content": prompt}]
     )
-    return response['choices'][0]['message']['content']
+    return response.choices[0].message.content
 
-st.title("Quiz Generator")
+st.title("📘 Quiz Generator from Notes")
 uploaded_file = st.file_uploader("Upload your notes", type=["pdf", "docx", "txt"])
 if uploaded_file:
     content = extract_text(uploaded_file)
     st.text("Extracted Content:")
-    st.write(content[:1000] + "...")
+    st.write(content[:700] + "...")
     if st.button("Generate Quiz"):
         questions = generate_questions(content)
         st.markdown("### Generated Quiz Questions:")
