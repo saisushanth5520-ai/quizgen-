@@ -36,7 +36,7 @@ def generate_questions(content):
         }
     }
 
-    HF_MODEL = "tiiuae/falcon-7b-instruct"
+    HF_MODEL = "gpt2"
     api_url = f"https://api-inference.huggingface.co/models/{HF_MODEL}"
 
     headers = {
