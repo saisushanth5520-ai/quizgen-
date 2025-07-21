@@ -25,15 +25,22 @@ def generate_questions(content):
         "Create 5 quiz questions (a mix of MCQ, true/false, and short answer) "
         "with answers, based on the following content:\n"
         f"{content}\n"
-        "Return only the questions and answers in clear display format."
+        "Return only the quiz in a clean and readable format."
     )
+
     payload = {
         "inputs": prompt,
-        "parameters": {"max_new_tokens": 512, "temperature": 0.7}
+        "parameters": {
+            "max_new_tokens": 512,
+            "temperature": 0.7
+        }
     }
-    HF_MODEL ="tiiuae/falcon-7b-instruct"
+
+    HF_MODEL = "tiiuae/falcon-7b-instruct"
     api_url = f"https://api-inference.huggingface.co/models/{HF_MODEL}"
+
     response = requests.post(api_url, json=payload)
+
     if response.status_code == 200:
         result = response.json()
         if isinstance(result, list):
@@ -43,9 +50,10 @@ def generate_questions(content):
         else:
             return "⚠️ Unexpected response format."
     elif response.status_code == 503:
-        return "⏳ Model is loading or busy, please try again in a minute."
+        return "⏳ Model is loading or busy. Please try again shortly."
     else:
         return f"❌ Error {response.status_code}: {response.text}"
+
 
 st.title("Quiz Generator (with Hugging Face)")
 st.write("Upload your notes (PDF, DOCX, or TXT) and get instant quiz questions powered by a free AI model.")
