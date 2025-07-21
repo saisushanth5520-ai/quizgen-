@@ -25,7 +25,7 @@ def generate_questions(content):
         "Create 5 quiz questions (a mix of MCQ, true/false, and short answer) "
         "with answers, based on the following content:\n"
         f"{content}\n"
-        "Return only the quiz in a clean and readable format."
+        "Return only the quiz in readable format."
     )
 
     payload = {
@@ -39,7 +39,11 @@ def generate_questions(content):
     HF_MODEL = "tiiuae/falcon-7b-instruct"
     api_url = f"https://api-inference.huggingface.co/models/{HF_MODEL}"
 
-    response = requests.post(api_url, json=payload)
+    headers = {
+        "Authorization": f"Bearer {st.secrets['hf_token']}"
+    }
+
+    response = requests.post(api_url, headers=headers, json=payload)
 
     if response.status_code == 200:
         result = response.json()
@@ -51,6 +55,8 @@ def generate_questions(content):
             return "⚠️ Unexpected response format."
     elif response.status_code == 503:
         return "⏳ Model is loading or busy. Please try again shortly."
+    elif response.status_code == 401:
+        return "❌ Invalid Hugging Face token. Please check your secrets."
     else:
         return f"❌ Error {response.status_code}: {response.text}"
 
