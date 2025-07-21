@@ -4,7 +4,7 @@ import PyPDF2
 from docx import Document
 
 # Store your API key securely (on Streamlit, use st.secrets)
-openai.api_key = st.secrets["api_key"]
+openai.api_key = st.secrets["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"]
 
 def extract_text(file):
     text = ""
