@@ -3,7 +3,7 @@ import requests
 import PyPDF2
 from docx import Document
 
-HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.2"  # Change to another model if desired
+# Change to another model if desired
 
 def extract_text(file):
     text = ""
