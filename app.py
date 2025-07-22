@@ -2,12 +2,11 @@ import streamlit as st
 from huggingface_hub import InferenceClient
 import PyPDF2
 from docx import Document
-import json
 
-# Choose your model; "microsoft/Phi-3-mini-4k-instruct" is public & high quality.
+# ✅ Replace with your preferred Hugging Face model
 REPO_ID = "microsoft/Phi-3-mini-4k-instruct"
 
-# Hugging Face token (in Streamlit secrets—see below)
+# ✅ Token stored securely in Streamlit secrets
 client = InferenceClient(
     model=REPO_ID,
     token=st.secrets["hf_token"],
@@ -32,40 +31,40 @@ def extract_text(file):
 
 def generate_questions(content):
     prompt = (
-        "Create 5 quiz questions (mix of MCQ, true/false, and short answer), each with an answer, based only on the following content:\n"
-        f"{content}\n"
-        "Format the quiz in a clean way."
+        "Create 5 quiz questions in a mix of MCQ, true/false, and short answer formats. "
+        "Include answers for each question. Based on the following content:\n\n"
+        f"{content.strip()}"
     )
-    response = client.post(
-        json={
-            "inputs": prompt,
-            "parameters": {"max_new_tokens": 300, "temperature": 0.7},
-            "task": "text-generation",
-        }
-    )
+
     try:
-        # If response is bytes, decode to string first
-        if isinstance(response, bytes):
-            result = json.loads(response.decode())
-        else:
-            result = json.loads(response)
-        return result[0]["generated_text"].replace(prompt, "").strip()
-    except Exception:
-        return "⚠️ Model call failed or response format changed."
+        response = client.text_generation(
+            prompt,
+            max_new_tokens=500,
+            temperature=0.7,
+            top_p=0.9,
+            repetition_penalty=1.1,
+            stop_sequences=["</s>"],
+        )
+        return response.strip()
+    except Exception as e:
+        return f"❌ Error calling model: {e}"
 
-st.title("AI Quiz Generator (Hugging Face Hosted Model)")
-st.write("Upload notes (PDF, DOCX, or TXT) to get quiz questions powered by free AI.")
+st.title("AI Quiz Generator (Hugging Face Model)")
+st.markdown("Upload any school notes (PDF, DOCX, TXT) to get a quiz powered by AI.")
 
-uploaded_file = st.file_uploader("Upload your notes", type=["pdf", "docx", "txt"])
+uploaded_file = st.file_uploader("📄 Upload your classroom notes", type=["pdf", "docx", "txt"])
+
 if uploaded_file:
     content = extract_text(uploaded_file)
-    if not content:
-        st.error("❌ Could not extract any text from the file.")
+    if not content.strip():
+        st.error("❌ No readable text found in the file.")
     else:
-        st.subheader("Extracted Content Preview")
+        st.subheader("📚 Extracted Content Preview")
         st.write(content[:1000] + (" ..." if len(content) > 1000 else ""))
-        if st.button("Generate Quiz"):
-            with st.spinner("Generating quiz... This may take a moment."):
+        if st.button("⚡ Generate Quiz"):
+            with st.spinner("Generating quiz using AI... please wait."):
                 questions = generate_questions(content)
-            st.markdown("### Generated Quiz Questions:")
-            st.write(questions)
+            st.success("✅ Quiz generated!")
+            st.markdown("### 🎯 Generated Quiz")
+            st.markdown(questions)
+
