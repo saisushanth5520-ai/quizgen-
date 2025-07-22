@@ -4,7 +4,7 @@ import PyPDF2
 from docx import Document
 
 # Hugging Face model and client setup
-REPO_ID = "microsoft/Phi-3-mini-4k-instruct"
+REPO_ID = "gpt2"
 
 client = InferenceClient(token=st.secrets["hf_token"])
 
