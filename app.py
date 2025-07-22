@@ -4,7 +4,7 @@ import PyPDF2
 from docx import Document
 
 # ✅ Replace with your preferred Hugging Face model
-REPO_ID = "microsoft/Phi-3-mini-4k-instruct"
+REPO_ID = "bigscience/bloom-560m"
 
 # ✅ Token stored securely in Streamlit secrets
 client = InferenceClient(
