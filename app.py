@@ -4,7 +4,7 @@ import PyPDF2
 from docx import Document
 
 # Hugging Face model and client setup
-REPO_ID = "gpt2"
+REPO_ID = "bigscience/bloom-560m"
 
 client = InferenceClient(token=st.secrets["hf_token"])
 
