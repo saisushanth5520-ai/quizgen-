@@ -3,69 +3,75 @@ from huggingface_hub import InferenceClient
 import PyPDF2
 from docx import Document
 
+# Hugging Face model repo – instruction-tuned, chat-style
 REPO_ID = "microsoft/Phi-3-mini-4k-instruct"
 
-client = InferenceClient(
-    model=REPO_ID,
-    token=st.secrets["hf_token"],  # Add your HF token in Streamlit secrets.
-    timeout=120,
-)
+# Create client with Hugging Face access token securely stored in Streamlit secrets
+client = InferenceClient(token=st.secrets["hf_token"])
 
+# Extract text from uploaded files
 def extract_text(file):
     text = ""
     if file.name.endswith(".pdf"):
         reader = PyPDF2.PdfReader(file)
         for page in reader.pages:
-            t = page.extract_text()
-            if t:
-                text += t
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text
     elif file.name.endswith(".docx"):
         doc = Document(file)
         for para in doc.paragraphs:
             text += para.text + "\n"
     elif file.name.endswith(".txt"):
         text = file.read().decode("utf-8")
-    return text
+    return text.strip()
 
+# Generate quiz questions using Hugging Face chat model
 def generate_questions(content):
     prompt = (
-        "Generate 5 quiz questions in a mix of MCQ, true/false, and short answer formats. "
-        "Include answers for each question. Base questions only on this content:\n\n"
-        f"{content.strip()}"
+        "You are an AI quiz assistant. Based on the following study content, generate 5 quiz questions "
+        "(a mix of multiple-choice, true/false, and short answer), and include the correct answers.\n\n"
+        f"{content}"
     )
     messages = [
-        {"role": "system", "content": "You are a quiz generator that outputs only quiz questions and their answers."},
+        {"role": "system", "content": "You are a helpful quiz generator."},
         {"role": "user", "content": prompt}
     ]
+
     try:
-        response = client.conversational(
+        response = client.chat.completions.create(
+            model=REPO_ID,
             messages=messages,
-            max_new_tokens=500,
+            max_tokens=500,
             temperature=0.7,
-            top_p=0.9,
-            repetition_penalty=1.1,
-            stop_sequences=["</s>"],
+            top_p=0.9
         )
-        return response.strip()
+        return response.choices[0].message.content.strip()
+
     except Exception as e:
         st.error(f"❌ Error calling model: {e}")
         return ""
 
-st.title("AI Quiz Generator (Phi-3 Powered)")
-st.markdown("Upload your school notes (PDF, DOCX, or TXT) to generate quiz questions with answers using AI.")
+# Streamlit UI
+st.title("📘 AI Quiz Generator with Hugging Face (Phi-3)")
+st.markdown("Upload your notes (PDF, DOCX, or TXT), and we'll generate quiz questions using AI.")
 
-uploaded_file = st.file_uploader("Upload your notes", type=["pdf", "docx", "txt"])
+# File uploader
+uploaded_file = st.file_uploader("📄 Upload your notes", type=["pdf", "docx", "txt"])
 
 if uploaded_file:
     content = extract_text(uploaded_file)
-    if not content.strip():
-        st.error("❌ No readable text found in the uploaded file.")
+
+    if not content:
+        st.error("❗ No usable text found in the uploaded file.")
     else:
-        st.subheader("Extracted Content Preview")
-        st.write(content[:1000] + (" ..." if len(content) > 1000 else ""))
+        st.subheader("📄 Extracted Content Preview")
+        st.write(content[:1000] + ("..." if len(content) > 1000 else ""))
+
         if st.button("Generate Quiz"):
-            with st.spinner("Generating quiz using AI... please wait."):
-                questions = generate_questions(content)
-            st.markdown("### Generated Quiz Questions")
-            st.markdown(questions)
+            with st.spinner("⏳ Generating quiz... please wait."):
+                output = generate_questions(content)
+            st.subheader("✅ Generated Quiz")
+            st.markdown(output)
+
 
