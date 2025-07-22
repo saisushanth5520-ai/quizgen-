@@ -1,5 +1,4 @@
 streamlit
 PyPDF2
 python-docx
-huggingface_hub
-
+huggingface_hub>=0.23.0
