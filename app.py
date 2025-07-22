@@ -3,13 +3,12 @@ from huggingface_hub import InferenceClient
 import PyPDF2
 from docx import Document
 
-# Hugging Face model repo – instruction-tuned, chat-style
+# Hugging Face model and client setup
 REPO_ID = "microsoft/Phi-3-mini-4k-instruct"
 
-# Create client with Hugging Face access token securely stored in Streamlit secrets
 client = InferenceClient(token=st.secrets["hf_token"])
 
-# Extract text from uploaded files
+# Extract content from uploaded files
 def extract_text(file):
     text = ""
     if file.name.endswith(".pdf"):
@@ -26,13 +25,14 @@ def extract_text(file):
         text = file.read().decode("utf-8")
     return text.strip()
 
-# Generate quiz questions using Hugging Face chat model
+# Generate quiz questions via Phi-3 hosted model
 def generate_questions(content):
     prompt = (
         "You are an AI quiz assistant. Based on the following study content, generate 5 quiz questions "
-        "(a mix of multiple-choice, true/false, and short answer), and include the correct answers.\n\n"
-        f"{content}"
+        "(mixed types: multiple choice, true/false, and short answer) with their correct answers.\n\n"
+        f"{content.strip()}"
     )
+
     messages = [
         {"role": "system", "content": "You are a helpful quiz generator."},
         {"role": "user", "content": prompt}
@@ -46,32 +46,40 @@ def generate_questions(content):
             temperature=0.7,
             top_p=0.9
         )
+
+        # ✅ Validate response
+        if response is None:
+            return "⚠️ No response received from the model."
+
+        if not hasattr(response, "choices") or not response.choices:
+            return "⚠️ Model returned an empty response. Try again."
+
         return response.choices[0].message.content.strip()
 
     except Exception as e:
         st.error(f"❌ Error calling model: {e}")
-        return ""
+        return "⚠️ Unable to generate questions. Please try again later."
 
-# Streamlit UI
-st.title("📘 AI Quiz Generator with Hugging Face (Phi-3)")
-st.markdown("Upload your notes (PDF, DOCX, or TXT), and we'll generate quiz questions using AI.")
+# Streamlit App UI
+st.set_page_config(page_title="AI Quiz Generator", page_icon="🧠")
+st.title("📘 AI Quiz Generator")
+st.markdown("Upload your study notes (PDF, DOCX, or TXT) and get AI-generated quiz questions with answers using Hugging Face 💡")
 
-# File uploader
-uploaded_file = st.file_uploader("📄 Upload your notes", type=["pdf", "docx", "txt"])
+uploaded_file = st.file_uploader("📄 Upload your notes here", type=["pdf", "docx", "txt"])
 
 if uploaded_file:
     content = extract_text(uploaded_file)
 
     if not content:
-        st.error("❗ No usable text found in the uploaded file.")
+        st.error("❌ No text could be extracted from the uploaded file.")
     else:
-        st.subheader("📄 Extracted Content Preview")
-        st.write(content[:1000] + ("..." if len(content) > 1000 else ""))
+        st.subheader("📝 Preview Extracted Content")
+        st.write(content[:1000] + (" ..." if len(content) > 1000 else ""))
 
-        if st.button("Generate Quiz"):
-            with st.spinner("⏳ Generating quiz... please wait."):
-                output = generate_questions(content)
-            st.subheader("✅ Generated Quiz")
-            st.markdown(output)
+        if st.button("⚡ Generate Quiz"):
+            with st.spinner("Generating quiz... please wait."):
+                result = generate_questions(content)
 
+            st.subheader("✅ Generated Quiz Questions")
+            st.markdown(result or "❌ No output received.")
 
